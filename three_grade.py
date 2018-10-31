@@ -44,7 +44,9 @@ class Problem():
         wrong_problem_list = []
         for i in range(int(problem_num)):
             problem_string ,ans= self.gen_p()
+            print('answer=',ans)
             input_int = self._input(problem_string)
+
             if input_int == ans:
                 print('正确')
             else:
@@ -65,15 +67,15 @@ class Problem():
         pro_type =  np.random.randint(0,2)
 
         if pro_type == 0:
-            'len'
             unit_type =self.len_units
+            unit_type_name = 'len'
 
         else:
-            'weight'
             unit_type =self.weigh_units
+            unit_type_name = 'weight'
 
-        unit1,unit2 = [np.random.choice(unit_type,1) for _ in [1,2]]
-        #print(unit1,unit2)
+        unit1,unit2 = [np.random.choice(unit_type,1)[0] for _ in [1,2]]
+        print(unit1,unit2)
 
         real_number = np.random.choice(self.real_numbers,1)[0]
         if int_or_float == 0:
@@ -85,9 +87,7 @@ class Problem():
         problem_string = '{real_number}{unit1}={input_ans}{unit2}'.format(real_number=real_number,unit1=unit1,unit2=unit2,input_ans='(  )')
 
 
-        unit1_index, unit2_index = [self._index_in_list(unit_type,value) for value in [unit1,unit2]]
 
-        unit_distance = unit2_index - unit1_index
 
         ans = 1
         ans *=self._swtichto10(unit_distance,unit1,unit2)
@@ -121,40 +121,44 @@ class Problem():
 
 
 
-    def _swtichto10(self,unit_distance,unit1,unit2):
+    def _swtichto10(self,unit1,unit2,unit_type,unit_type_name):
         '''
         数字转换成10进位制进率,ex:2转成100,3转成1000,
         特殊情况米、千米
         :return:
         '''
         number = 1
-        for value in [unit1,unit2]:
-            if '千' in value:
-                kilo_bool =True
-                #number *=1000
-            else:
-                kilo_bool =False
+        if unit_type_name =='weight':
+            kilo_bool=True
+        elif unit_type_name =='len':
+            if '千米' == unit1 or '千米' == unit2:
+                kilo_bool = True
+
+        else:
+            return  None
+        unit1_index, unit2_index = [self._index_in_list(unit_type,value) for value in [unit1,unit2]]
+        unit_distance = unit2_index - unit1_index
 
         if unit_distance >0:
-            number = -1
+            if kilo_bool:
+                number*=1000
+            else:
+                number = 1
         else:
-            number = 1
+            if kilo_bool:
+                number/=1000
+            else:
+                number = -1
+            unit_distance = -unit_distance
 
         for value in range(unit_distance):
             if value > 0:
-                if kilo_bool:
-                    number*=1000
-                    return  number
-                else:
                     number *= 10
             else:
-                if kilo_bool:
-                    number /= 1000
-                    return number
-                else:
                     number /= 10
 
             value -= 1
+        print('number=',number,'kilo_bool=',kilo_bool)
         return number
 
 
