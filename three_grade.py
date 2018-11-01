@@ -18,6 +18,17 @@ import numpy as np
 import itertools
 import pandas as pd
 import datetime
+import time
+
+
+def exeTime(func):
+    def newFunc(*args, **args2):
+        t0 = time.time()
+        back = func(*args, **args2)
+        t1 =time.time()
+        print('用时',t1-t0)
+        return back
+    return newFunc
 
 class Problem():
     def __init__(self,r,n):
@@ -34,17 +45,18 @@ class Problem():
         while(error):
             try:
 
-                input_int = int(input())
+                input_int = np.float64(input())
                 return input_int
             except ValueError:
                     print('只能输入数字')
                     error=True
 
+    @exeTime
     def gen_problems(self,problem_num):
         wrong_problem_list = []
         for i in range(int(problem_num)):
             problem_string ,ans= self.gen_p()
-            print('answer=',ans)
+            #print('answer=',ans)
             input_int = self._input(problem_string)
 
             if input_int == ans:
@@ -53,8 +65,8 @@ class Problem():
                 print('错误')
                 wrong_problem_list.append(problem_string)
 
-        correct_rate = len(wrong_problem_list)/int(problem_num)
-        print('正确率:{correct_rate}'.format(correct_rate=correct_rate
+        correct_rate = 1-len(wrong_problem_list)/int(problem_num)
+        print('错误题目数:{wrong_problems},正确率:{correct_rate}'.format(correct_rate=correct_rate,wrong_problems=len(wrong_problem_list)
                                           ))
 
     def gen_p(self):
@@ -73,9 +85,11 @@ class Problem():
         else:
             unit_type =self.weigh_units
             unit_type_name = 'weight'
+        unit1,unit2 = '',''
+        while(unit1 == unit2):
+            unit1,unit2 = [np.random.choice(unit_type,1)[0] for _ in [1,2]]
 
-        unit1,unit2 = [np.random.choice(unit_type,1)[0] for _ in [1,2]]
-        print(unit1,unit2)
+        #print(unit1,unit2)
 
         real_number = np.random.choice(self.real_numbers,1)[0]
         if int_or_float == 0:
@@ -89,20 +103,12 @@ class Problem():
 
 
 
-        ans = 1
-        ans *=self._swtichto10(unit_distance,unit1,unit2)
+        ans = real_number
+
+        ans *=self._swtichto10(unit1,unit2,unit_type,unit_type_name)
 
         return problem_string,ans
 
-
-    def if_correct(self,input_,ans):
-        print('input_={input},ans={ans}'.format(input_=input_,ans=ans))
-        if input_ == ans:
-            print('正确')
-            return True
-        else:
-            print('错误')
-            return False
 
 
     def _index_in_list(self,_list,value):
@@ -124,41 +130,66 @@ class Problem():
     def _swtichto10(self,unit1,unit2,unit_type,unit_type_name):
         '''
         数字转换成10进位制进率,ex:2转成100,3转成1000,
-        特殊情况米、千米
+        分三种情况,1:weight,进率为1000 2:厘米、分米、毫米等为第二种情况,10进制,3:千米 进率为1000
+
         :return:
         '''
-        number = 1
+        #print(unit_type_name)
+        unit1_index, unit2_index = [self._index_in_list(unit_type, value) for value in [unit1, unit2]]
+        unit_distance = unit1_index - unit2_index
         if unit_type_name =='weight':
-            kilo_bool=True
+            return self._base_trans(1000,unit_distance)
         elif unit_type_name =='len':
             if '千米' == unit1 or '千米' == unit2:
-                kilo_bool = True
+                return self._special_len(unit_distance)
+            else:
+                return self._base_trans(10, unit_distance)
 
         else:
             return  None
-        unit1_index, unit2_index = [self._index_in_list(unit_type,value) for value in [unit1,unit2]]
-        unit_distance = unit2_index - unit1_index
 
-        if unit_distance >0:
-            if kilo_bool:
-                number*=1000
-            else:
-                number = 1
+
+
+    def _base_trans(self,tans_unit,unit_distance):
+        number = 1
+        unit_positive=True
+        #print('tans_unit',tans_unit,unit_distance)
+        if unit_distance > 0:
+            pass
         else:
-            if kilo_bool:
-                number/=1000
-            else:
-                number = -1
             unit_distance = -unit_distance
-
+            unit_positive=False
         for value in range(unit_distance):
-            if value > 0:
-                    number *= 10
+            if value >= 0 and unit_positive:
+                number *= tans_unit
+            elif value >= 0 and (unit_positive==False):
+                number /= tans_unit
             else:
-                    number /= 10
+                continue
 
             value -= 1
-        print('number=',number,'kilo_bool=',kilo_bool)
+        #print('number=', number)
+        return number
+
+    def _special_len(self,unit_distance):
+        number = 1
+        unit_positive=True
+        #print('unit_distance',unit_distance)
+        if unit_distance >0:
+            number*=1000
+        else:
+            unit_distance = -unit_distance
+            unit_positive = False
+            number/=1000
+        #print('number befor loop',number)
+        for value in range(unit_distance):
+            if value >=1 and unit_positive:
+                number *= 10
+            elif value >=1 and (unit_positive==False):
+                number/=10
+            value-=1
+        #print('number=', number)
+
         return number
 
 
